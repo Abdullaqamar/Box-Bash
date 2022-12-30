@@ -1,0 +1,101 @@
+import random,pygame
+
+# Initialize Pygame
+pygame.init()
+
+# Set the window size and title
+window_size = (800, 600)
+window_title = "Box Bash"
+
+# Create the window and set the background color to white
+screen = pygame.display.set_mode(window_size)
+screen.fill((100, 0, 158))
+
+# Set the window title
+pygame.display.set_caption(window_title)
+
+# Create a rectangle to represent the player character
+player_rect = pygame.Rect(200, window_size[1] - 50, 50, 50)
+
+# Generate random x and y coordinates for the additional object
+additional_rect_x = random.randint(0, window_size[0])
+additional_rect_y = random.randint(0, window_size[1])
+
+# Create a rectangle to represent the additional object at the random position
+additional_rect = pygame.Rect(additional_rect_x, additional_rect_y, 40, 30)
+
+# Set the falling speed of the additional object
+falling_speed = .42
+
+# Main game loop
+running = True
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            running = False
+
+        # Check for key press events
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_w:
+                # Check if the new y-coordinate of the player character will be within the bounds of the screen
+                if player_rect.y - 25 >= 0:
+                    # Move the player and additional object up
+                    player_rect.y -= 25
+                    # Clear the screen
+                    screen.fill((100, 0, 158))
+            elif event.key == pygame.K_a:
+                # Check if the new x-coordinate of the player character will be within the bounds of the screen
+                if player_rect.x - 25 >= 0:
+                    # Move the player and additional object left
+                    player_rect.x -= 25
+                    # Clear the screen
+                                    # Clear the screen
+                    screen.fill((100, 0, 158))
+            elif event.key == pygame.K_s:
+                # Check if the new y-coordinate of the player character will be within the bounds of the screen
+                if player_rect.y + 25 + player_rect.height <= window_size[1]:
+                    # Move the player and additional object down
+                    player_rect.y += 25
+                    # Clear the screen
+                    screen.fill((100, 0, 158))
+            elif event.key == pygame.K_d:
+                # Check if the new x-coordinate of the player character will be within the bounds of the screen
+                if player_rect.x + 25 + player_rect.width <= window_size[0]:
+                    # Move the player and additional object right
+                    player_rect.x += 25
+                    # Clear the screen
+                    screen.fill((100, 0, 158))
+
+    # Update the y-coordinate of the additional object
+    additional_rect_y += falling_speed
+
+    # Check if the additional object has reached the bottom of the screen
+    if additional_rect_y > window_size[1]:
+        # If it has, reset the x and y-coordinates to random positions on the screen
+        additional_rect_x = random.randint(0, window_size[0])
+        additional_rect_y = random.randint(0, window_size[1])
+
+    # Update the position of the additional object based on its x and y-coordinates
+    additional_rect.x = additional_rect_x
+    additional_rect.y = additional_rect_y
+
+    # Draw the player character and additional object to the
+        # Draw the player character and additional object to the screen
+    pygame.draw.rect(screen, (255, 0, 0), player_rect)
+    pygame.draw.rect(screen, (0, 255, 0), additional_rect)
+
+    pygame.display.flip()
+    if player_rect.colliderect(additional_rect):
+    # If it has, stop the loop and display the "Game Over" screen
+        running = False
+        screen.fill((255, 0, 0))
+        font = pygame.font.Font(None, 36)
+        text = font.render("Game Over", 1, (255, 255, 255))
+        screen.blit(text, (350, 250))
+        pygame.display.flip()
+        pygame.time.wait(2000)
+
+
+
+# Quit Pygame
+pygame.quit()
