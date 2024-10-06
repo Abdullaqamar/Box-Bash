@@ -1,4 +1,5 @@
-import random,pygame
+import random
+import pygame
 
 # Initialize Pygame
 pygame.init()
@@ -7,7 +8,7 @@ pygame.init()
 window_size = (800, 600)
 window_title = "Box Bash"
 
-# Create the window and set the background color to white
+# Create the window and set the background color to a specific shade of purple
 screen = pygame.display.set_mode(window_size)
 screen.fill((100, 0, 158))
 
@@ -24,47 +25,74 @@ additional_rect_y = random.randint(0, window_size[1])
 # Create a rectangle to represent the additional object at the random position
 additional_rect = pygame.Rect(additional_rect_x, additional_rect_y, 40, 30)
 
-# Set the falling speed of the additional object
-falling_speed = .42
+# Increased the falling speed of the additional object
+falling_speed = 1.2  # Increased speed
+
+# Define colors
+WHITE = (255, 255, 255)
+YELLOW = (255, 255, 0)  # Player rectangle color
+BLUE = (0, 0, 255)  # Player path color
+GREEN = (0, 255, 0)  # Additional object color
+
+# Define font
+font = pygame.font.Font(None, 36)
+
+# Movement speed for the player
+player_speed = 10
+
+# Lists to store trail positions for the player and object
+player_trail = []
+additional_trail = []
+
+# Create a grid to track which areas have been visited (decreased grid cell size to 5x5)
+grid_size = 5
+grid_width = window_size[0] // grid_size
+grid_height = window_size[1] // grid_size
+visited_grid = [[False for _ in range(grid_width)] for _ in range(grid_height)]
+
+def mark_grid_as_visited(player_rect):
+    """Mark the grid cells the player has visited."""
+    start_x = player_rect.x // grid_size
+    end_x = (player_rect.x + player_rect.width) // grid_size
+    start_y = player_rect.y // grid_size
+    end_y = (player_rect.y + player_rect.height) // grid_size
+
+    for grid_x in range(start_x, end_x + 1):
+        for grid_y in range(start_y, end_y + 1):
+            if 0 <= grid_x < grid_width and 0 <= grid_y < grid_height:
+                visited_grid[grid_y][grid_x] = True
+
+def all_cells_visited():
+    """Check if all the grid cells have been visited."""
+    for row in visited_grid:
+        if not all(row):
+            return False
+    return True
 
 # Main game loop
 running = True
+won = False
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             running = False
 
-        # Check for key press events
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_w:
-                # Check if the new y-coordinate of the player character will be within the bounds of the screen
-                if player_rect.y - 25 >= 0:
-                    # Move the player and additional object up
-                    player_rect.y -= 25
-                    # Clear the screen
-                    screen.fill((100, 0, 158))
-            elif event.key == pygame.K_a:
-                # Check if the new x-coordinate of the player character will be within the bounds of the screen
-                if player_rect.x - 25 >= 0:
-                    # Move the player and additional object left
-                    player_rect.x -= 25
-                    # Clear the screen
-                                    # Clear the screen
-                    screen.fill((100, 0, 158))
-            elif event.key == pygame.K_s:
-                # Check if the new y-coordinate of the player character will be within the bounds of the screen
-                if player_rect.y + 25 + player_rect.height <= window_size[1]:
-                    # Move the player and additional object down
-                    player_rect.y += 25
-                    # Clear the screen
-                    screen.fill((100, 0, 158))
-            elif event.key == pygame.K_d:
-                # Check if the new x-coordinate of the player character will be within the bounds of the screen
-                if player_rect.x + 25 + player_rect.width <= window_size[0]:
-                    # Move the player and additional object right
-                    player_rect.x += 25
-                    # Clear the screen
-                    screen.fill((100, 0, 158))
+    # Check for continuous key presses
+    keys = pygame.key.get_pressed()
+
+    # Move the player character based on arrow keys being held down
+    if keys[pygame.K_w]:  # Move up
+        if player_rect.y - player_speed >= 0:
+            player_rect.y -= player_speed
+    if keys[pygame.K_a]:  # Move left
+        if player_rect.x - player_speed >= 0:
+            player_rect.x -= player_speed
+    if keys[pygame.K_s]:  # Move down
+        if player_rect.y + player_speed + player_rect.height <= window_size[1]:
+            player_rect.y += player_speed
+    if keys[pygame.K_d]:  # Move right
+        if player_rect.x + player_speed + player_rect.width <= window_size[0]:
+            player_rect.x += player_speed
 
     # Update the y-coordinate of the additional object
     additional_rect_y += falling_speed
@@ -79,22 +107,54 @@ while running:
     additional_rect.x = additional_rect_x
     additional_rect.y = additional_rect_y
 
-    # Draw the player character and additional object to the
-        # Draw the player character and additional object to the screen
-    pygame.draw.rect(screen, (255, 0, 0), player_rect)
-    pygame.draw.rect(screen, (0, 255, 0), additional_rect)
+    # Store the current position of the player and additional object in the trail lists
+    player_trail.append((player_rect.x, player_rect.y))
+    additional_trail.append((additional_rect.x, additional_rect.y))
 
-    pygame.display.flip()
-    if player_rect.colliderect(additional_rect):
-    # If it has, stop the loop and display the "Game Over" screen
-        running = False
-        screen.fill((255, 0, 0))
-        font = pygame.font.Font(None, 36)
-        text = font.render("Game Over", 1, (255, 255, 255))
+    # Redraw the background to clear previous frames
+    screen.fill((100, 0, 158))
+
+    # Draw the green trail (additional object) first
+    for pos in additional_trail:
+        pygame.draw.rect(screen, GREEN, (*pos, 40, 30))  # Green trail
+
+    # Then draw the player's trail (so that it appears on top of the green trail)
+    for pos in player_trail:
+        pygame.draw.rect(screen, BLUE, (*pos, 50, 50))  # Blue trail (for path)
+
+    # Draw the player character and additional object to the screen
+    pygame.draw.rect(screen, YELLOW, player_rect)   # Player is yellow now (rectangle)
+    pygame.draw.rect(screen, GREEN, additional_rect)  # Green for falling object
+
+    # Mark the current player position as visited in the grid
+    mark_grid_as_visited(player_rect)
+
+    # Check if the player has covered the entire screen
+    if all_cells_visited() and not won:
+        # Display "You Win" screen
+        won = True
+        screen.fill(WHITE)
+        text = font.render("You Win!", 1, BLUE)   # Winning message in blue
         screen.blit(text, (350, 250))
         pygame.display.flip()
-        pygame.time.wait(2000)
+        pygame.time.wait(2000)  # Wait 2 seconds to show the winning screen
+        running = False
 
+    # Check if the player character collides with the additional object
+    if player_rect.colliderect(additional_rect):
+        # If it has, stop the loop and display the "Game Over" screen
+        running = False
+        screen.fill(WHITE)
+        text = font.render("Game Over", 1, BLUE)
+        screen.blit(text, (350, 250))
+        pygame.display.flip()
+        pygame.time.wait(2000)  # Wait 2 seconds to show the Game Over screen
+
+    # Update the display
+    pygame.display.flip()
+
+    # Wait for a short period of time to control the game speed
+    pygame.time.wait(10)
 
 
 # Quit Pygame
